@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kartu Ucapan Botol Pesan</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+        }
+
+        .background {
+            position: absolute;
+            width: 300%;
+            height: 100%;
+            background-image: url('laut.jpg');
+            background-size: cover;
+            background-position: center;
+            z-index: -1;
+            animation: bgMove 60s linear infinite;
+        }
+
+        @keyframes bgMove {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-66.66%); }
+        }
+
+        .ocean {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 30%;
+            overflow: hidden;
+        }
+
+        .wave {
+            position: absolute;
+            bottom: 0;
+            width: 200%;
+            height: 130px;
+            background-image: url('wave.png');
+            background-repeat: repeat-x;
+            background-size: contain;
+            animation: wave 10s linear infinite;
+            z-index: 11;
+        }
+
+        @keyframes wave {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        .bottle-container {
+            position: absolute;
+            bottom: 30px;
+            right: -100px;
+            cursor: pointer;
+            transition: transform 0.3s;
+            z-index: 10;
+            animation: float 15s linear infinite;
+        }
+
+        @keyframes float {
+            0% { 
+                transform: translateX(0) translateY(0) rotate(0deg);
+                right: -100px;
+            }
+            50% {
+                transform: translateY(-20px) rotate(5deg);
+            }
+            100% { 
+                transform: translateX(calc(-100vw - 100px)) translateY(0) rotate(0deg);
+                right: 100%;
+            }
+        }
+
+        .bottle-img {
+            width: 100px;
+            height: auto;
+            filter: drop-shadow(2px 4px 6px rgba(0, 0, 0, 0.5));
+        }
+
+        .message {
+            position: absolute;
+            bottom: 20px;
+            left: 15px;
+            width: 50px;
+            height: 0;
+            background-color: #f5f5dc;
+            transform-origin: bottom;
+            transition: height 0.5s ease-out;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .opened-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            width: 80%;
+            max-width: 400px;
+            max-height: 70vh;
+            background-color: #f5f5dc;
+            border: 2px solid #8b4513;
+            border-radius: 5px;
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            z-index: 100;
+            transition: transform 0.7s;
+            display: flex;
+            flex-direction: column;
+            text-align: center;
+            overflow-y: auto;
+        }
+
+        .opened-message h2 {
+            color: #8b4513;
+            margin-bottom: 15px;
+            position: sticky;
+            top: 0;
+            background-color: #f5f5dc;
+            padding: 10px 0;
+            z-index: 1;
+        }
+
+        .opened-message p {
+            color: #333;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .close-btn {
+            position: sticky;
+            top: 0;
+            align-self: flex-end;
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #8b4513;
+            z-index: 2;
+            margin-bottom: -20px;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 50;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s;
+        }
+
+        .bottle-lifted {
+            animation: lift 1.5s forwards;
+        }
+
+        @keyframes lift {
+            0% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-200px) rotate(10deg);
+            }
+            100% {
+                transform: translateY(-150px) rotate(0deg);
+            }
+        }
+
+        .message-visible {
+            height: 90px;
+        }
+
+        .message-opened {
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .overlay-visible {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .audio-control {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 200;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .audio-control i {
+            font-size: 20px;
+            color: #333;
+        }
+
+        /* Custom scrollbar */
+        .opened-message::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .opened-message::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .opened-message::-webkit-scrollbar-thumb {
+            background: #8b4513;
+            border-radius: 10px;
+        }
+
+        .opened-message::-webkit-scrollbar-thumb:hover {
+            background: #6d3610;
+        }
+
+        .instruction {
+            position: fixed;
+            top: 20%; /* Posisi 20% dari atas */
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(255, 255, 255, 0.2);
+            color: #e0f7fa; /* Warna biru langit muda */
+            padding: 12px 24px;
+            border-radius: 30px;
+            z-index: 5;
+            animation: pulse 2s infinite;
+            font-size: 18px;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        @keyframes pulse {
+            0% { 
+                transform: translateX(-50%) scale(1);
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            }
+            50% { 
+                transform: translateX(-50%) scale(1.05);
+                box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+            }
+            100% { 
+                transform: translateX(-50%) scale(1);
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            }
+        }
+
+      .gallery-container {
+            max-width: 1200px;
+            margin: 70px auto 50px;
+            padding: 0 15px;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 1.8rem;
+        }
+        .masonry-gallery {
+            column-count: 1;
+            column-gap: 15px;
+        }
+        .masonry-item {
+            break-inside: avoid;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .masonry-item:hover {
+            transform: scale(1.02);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        .masonry-item img {
+            width: 100%;
+            display: block;
+        }
+        .masonry-caption {
+            background: white;
+            padding: 10px;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+        .navigation-menu {
+            background-color: #333;
+            padding: 15px 0;
+            text-align: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+        }
+        .navigation-menu a {
+            color: white;
+            text-decoration: none;
+            margin: 0 10px;
+            padding: 5px 8px;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+            font-size: 0.9rem;
+        }
+        .navigation-menu a:hover {
+            background-color: #555;
+        }
+
+        /* Tablet Styles */
+        @media (max-width: 900px) {
+            .masonry-gallery {
+                column-count: 1;
+            }
+        }
+
+        /* Mobile Styles - MODIFIED untuk 2 kolom masonry */
+        @media (max-width: 600px) {
+            .gallery-container {
+                margin-top: 80px;
+                padding: 0 10px;
+            }
+            h1 {
+                font-size: 1.5rem;
+                margin-bottom: 20px;
+            }
+            .masonry-gallery {
+                column-count: 1; /* Diubah jadi 2 kolom */
+                column-gap: 10px;
+            }
+            .masonry-item {
+                margin-bottom: 10px;
+                border-radius: 6px;
+            }
+            .masonry-caption {
+                padding: 8px;
+                font-size: 0.8rem;
+            }
+            .navigation-menu {
+                padding: 10px 0;
+            }
+            .navigation-menu a {
+                margin: 0 5px;
+                padding: 3px 6px;
+                font-size: 0.8rem;
+            }
+            
+            /* Hapus aturan tinggi gambar spesifik */
+            /* Biarkan gambar mengikuti rasio aslinya */
+            .masonry-item img {
+                height: auto;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+</head>
+<body>
+    <div class="background"></div>
+    <div class="ocean">
+        <div class="wave"></div>
+        <div class="bottle-container" id="bottle">
+            <img src="bottle.png" alt="Bottle" class="bottle-img">
+            <div class="message" id="message"></div>
+        </div>
+    </div>
+
+    <div class="instruction" id="instruction">
+        Klik botol untuk membuka pesan
+    </div>
+
+    <div class="overlay" id="overlay"></div>
+
+    <div class="opened-message" id="openedMessage">
+        <button class="close-btn" id="closeBtn">×</button>
+        <h2>Congratulations!🎓✨</h2>
+        <h2>Unofficially, S.M.💐</h2>
+      <p>Proud of you, Fernando Kelvin Raffaelius🤟🏻</p>
+      <p>Dari : <br>Irenn</p>
+        <div class="gallery-container"> 
+          <div class="masonry-gallery">
+              <div class="masonry-item">
+                  <img src="kelvin.jpeg" alt="Art 3"> 
+              </div>
+          </div>
+      </div>
+    </div>
+
+    <audio id="bgMusic" loop>
+        <source src="kejarmimpi.mp3" type="audio/mpeg">
+        Browser Anda tidak mendukung elemen audio.
+    </audio>
+
+    <div class="audio-control" id="audioControl">
+        <i class="fas fa-music"></i>
+    </div>
+
+    <script>
+        const bottle = document.getElementById('bottle');
+        const message = document.getElementById('message');
+        const openedMessage = document.getElementById('openedMessage');
+        const overlay = document.getElementById('overlay');
+        const closeBtn = document.getElementById('closeBtn');
+        const bgMusic = document.getElementById('bgMusic');
+        const audioControl = document.getElementById('audioControl');
+        const instruction = document.getElementById('instruction');
+        let bottleClicked = false;
+        let musicPlaying = false;
+
+        // Audio control
+        audioControl.addEventListener('click', () => {
+            if (musicPlaying) {
+                bgMusic.pause();
+                audioControl.innerHTML = '<i class="fas fa-music"></i>';
+            } else {
+                bgMusic.play();
+                audioControl.innerHTML = '<i class="fas fa-pause"></i>';
+            }
+            musicPlaying = !musicPlaying;
+        });
+
+        bottle.addEventListener('click', () => {
+            if (bottleClicked) return;
+            bottleClicked = true;
+            
+            // Hide instruction
+            instruction.style.display = 'none';
+            
+            // Play music when bottle is clicked if not already playing
+            if (!musicPlaying) {
+                bgMusic.play();
+                musicPlaying = true;
+                audioControl.innerHTML = '<i class="fas fa-pause"></i>';
+            }
+            
+            // Stop floating animation
+            bottle.style.animation = 'none';
+            
+            // Lift the bottle
+            bottle.classList.add('bottle-lifted');
+            
+            // Show message in bottle
+            setTimeout(() => {
+                message.classList.add('message-visible');
+            }, 1000);
+            
+            // Show full message
+            setTimeout(() => {
+                overlay.classList.add('overlay-visible');
+                openedMessage.classList.add('message-opened');
+            }, 2000);
+        });
+
+        closeBtn.addEventListener('click', () => {
+            overlay.classList.remove('overlay-visible');
+            openedMessage.classList.remove('message-opened');
+            
+            // Reset animation after a delay
+            setTimeout(() => {
+                bottleClicked = false;
+                bottle.classList.remove('bottle-lifted');
+                message.classList.remove('message-visible');
+                bottle.style.animation = 'float 15s linear infinite';
+                bottle.style.right = '-100px';
+                instruction.style.display = 'block';
+            }, 500);
+        });
+
+        // Reset bottle position when animation ends
+        bottle.addEventListener('animationend', () => {
+            if (!bottleClicked) {
+                bottle.style.right = '-100px';
+                // Force reflow to restart animation
+                void bottle.offsetWidth;
+                bottle.style.animation = 'float 15s linear infinite';
+            }
+        });
+    </script>
+</body>
+</html>
